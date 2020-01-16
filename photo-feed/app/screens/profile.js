@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  TextInput,
   TouchableOpacity,
   FlatList,
   StyleSheet,
@@ -8,6 +9,8 @@ import {
   Image
 } from "react-native";
 import { f, auth, database, storage } from "../../config/config.js";
+import PhotoList from "../components/photolist.js";
+import UserAuth from "../components/auth.js";
 
 class profile extends React.Component {
   constructor(props) {
@@ -17,14 +20,31 @@ class profile extends React.Component {
     };
   }
 
+  fetchUserInfo = userId => {
+    let that = this;
+    database
+      .ref("users")
+      .child(userId)
+      .once("value")
+      .then(function(snapshot) {
+        const exists = snapshot.val() !== null;
+        if (exists) data = snapshot.val();
+        that.setState({
+          username: data.username,
+          name: data.name,
+          avatar: data.avatar,
+          loggedin: true,
+          userId: userId
+        });
+      });
+  };
+
   componentDidMount = () => {
     let that = this;
     f.auth().onAuthStateChanged(function(user) {
       if (user) {
         // Logged in
-        that.setState({
-          loggedin: true
-        });
+        that.fetchUserInfo(user.uid);
       } else {
         // Not logged in
         that.setState({
@@ -32,6 +52,36 @@ class profile extends React.Component {
         });
       }
     });
+  };
+
+  saveProfile = () => {
+    let name = this.state.name;
+    let username = this.state.username;
+
+    if (name !== "") {
+      database
+        .ref("users")
+        .child(this.state.userId)
+        .child("name")
+        .set(name);
+    }
+    if (username !== "") {
+      database
+        .ref("users")
+        .child(this.state.userId)
+        .child("username")
+        .set(username);
+    }
+    this.setState({ editingProfile: false });
+  };
+
+  logoutUser = () => {
+    f.auth().signOut();
+    alert("Logged Out");
+  };
+
+  editProfile = () => {
+    this.setState({ editingProfile: true });
   };
 
   render() {
@@ -63,7 +113,7 @@ class profile extends React.Component {
             >
               <Image
                 source={{
-                  uri: "https://api.adorable.io/avatars/285/test@user.i.png"
+                  uri: this.state.avatar
                 }}
                 style={{
                   marginLeft: 10,
@@ -77,57 +127,117 @@ class profile extends React.Component {
                   marginRight: 10
                 }}
               >
-                <Text>Name</Text>
-                <Text>@username</Text>
+                <Text>{this.state.name}</Text>
+                <Text>{this.state.username}</Text>
               </View>
             </View>
-            <View style={{ paddingBottom: 20, borderBottomWidth: 1 }}>
-              <TouchableOpacity
+            {this.state.editingProfile == true ? (
+              <View
                 style={{
-                  marginTop: 10,
-                  marginHorizontal: 40,
-                  paddingVertical: 15,
-                  borderRadius: 20,
-                  borderColor: "grey",
-                  borderWidth: 1.5
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingBottom: 20,
+                  borderBottomWidth: 1
                 }}
               >
-                <Text style={{ textAlign: "center", color: "grey" }}>
-                  Logout
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  marginTop: 10,
-                  marginHorizontal: 40,
-                  paddingVertical: 15,
-                  borderRadius: 20,
-                  borderColor: "grey",
-                  borderWidth: 1.5
-                }}
-              >
-                <Text style={{ textAlign: "center", color: "grey" }}>
-                  Edit Profile
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => this.props.navigation.navigate("Upload")}
-                style={{
-                  marginTop: 10,
-                  marginHorizontal: 40,
-                  paddingVertical: 35,
-                  borderRadius: 20,
-                  borderColor: "grey",
-                  borderWidth: 1.5,
-                  backgroundColor: "grey"
-                }}
-              >
-                <Text style={{ textAlign: "center", color: "white" }}>
-                  Upload New +
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <View
+                <TouchableOpacity
+                  onPress={() => this.setState({ editingProfile: false })}
+                >
+                  <Text style={{ fontWeight: "bold" }}>Cancel Editing</Text>
+                </TouchableOpacity>
+                <Text>Name:</Text>
+                <TextInput
+                  editable={true}
+                  placeholder={"Enter your name"}
+                  onChangeText={text => this.setState({ name: text })}
+                  value={this.state.name}
+                  style={{
+                    width: 250,
+                    marginVertical: 10,
+                    padding: 5,
+                    borderColor: "grey",
+                    borderWidth: 1
+                  }}
+                />
+                <Text>Username:</Text>
+                <TextInput
+                  editable={true}
+                  placeholder={"Enter your username"}
+                  onChangeText={text => this.setState({ username: text })}
+                  value={this.state.username}
+                  style={{
+                    width: 250,
+                    marginVertical: 10,
+                    padding: 5,
+                    borderColor: "grey",
+                    borderWidth: 1
+                  }}
+                />
+                <TouchableOpacity
+                  style={{ backgroundColor: "blue", padding: 10 }}
+                  onPress={() => this.saveProfile()}
+                >
+                  <Text style={{ color: "white", fontWeight: "bold" }}>
+                    Save Changes
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ paddingBottom: 20, borderBottomWidth: 1 }}>
+                <TouchableOpacity
+                  onPress={() => this.logoutUser()}
+                  style={{
+                    marginTop: 10,
+                    marginHorizontal: 40,
+                    paddingVertical: 15,
+                    borderRadius: 20,
+                    borderColor: "grey",
+                    borderWidth: 1.5
+                  }}
+                >
+                  <Text style={{ textAlign: "center", color: "grey" }}>
+                    Logout
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => this.editProfile()}
+                  style={{
+                    marginTop: 10,
+                    marginHorizontal: 40,
+                    paddingVertical: 15,
+                    borderRadius: 20,
+                    borderColor: "grey",
+                    borderWidth: 1.5
+                  }}
+                >
+                  <Text style={{ textAlign: "center", color: "grey" }}>
+                    Edit Profile
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => this.props.navigation.navigate("Upload")}
+                  style={{
+                    marginTop: 10,
+                    marginHorizontal: 40,
+                    paddingVertical: 35,
+                    borderRadius: 20,
+                    borderColor: "grey",
+                    borderWidth: 1.5,
+                    backgroundColor: "grey"
+                  }}
+                >
+                  <Text style={{ textAlign: "center", color: "white" }}>
+                    Upload New +
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <PhotoList
+              isUser={true}
+              userId={this.state.userId}
+              navigation={this.props.navigation}
+            />
+            {/* <View
               style={{
                 flex: 1,
                 justifyContent: "center",
@@ -136,16 +246,11 @@ class profile extends React.Component {
               }}
             >
               <Text>Loading photos...</Text>
-            </View>
+            </View>*/}
           </View>
         ) : (
-          // not logged in
-          <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-          >
-            <Text>You are not logged in</Text>
-            <Text>Please login to view your profile</Text>
-          </View>
+          // {/* not logged in */}
+          <UserAuth message={"Please login to view your profile"} />
         )}
       </View>
     );

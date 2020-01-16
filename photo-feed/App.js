@@ -2,7 +2,8 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import {
   createStackNavigator,
-  createBottomTabNavigator
+  createBottomTabNavigator /*,
+  createAppContainer*/
 } from "react-navigation";
 import { f, auth, database, storage } from "./config/config.js";
 
@@ -31,25 +32,20 @@ const MainStack = createStackNavigator(
   }
 );
 
-export default class App extends React.Component {
-  login = async () => {
-    // Force user to login
-    try {
-      let user = await auth.signInWithEmailAndPassword(
-        "test@user.com",
-        "password"
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  };
+// For React Navigation Version 3
+//const AppContainer = createAppContainer(MainStack);
 
+export default class App extends React.Component {
+  userId;
   constructor(props) {
     super(props);
-    this.login();
   }
   render() {
+    // Before React Navigation Version 3
     return <MainStack />;
+
+    // For React Navigation Version 3
+    //return <AppContainer />;
   }
 }
 

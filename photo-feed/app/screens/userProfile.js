@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   TouchableOpacity,
   FlatList,
@@ -8,29 +8,40 @@ import {
   Image
 } from "react-native";
 import { f, auth, database, storage } from "../../config/config.js";
+import PhotoList from "../components/photolist.js";
+/*TODO set params here & look into proptypes, mapStateToProps, and connect*/
+const userProfile = props => {
+  // constructor(props) {
+  //   super(props);
+  //   this.state = {
+  //     loaded: false
+  //   };
+  // }
+  const [loaded, SetLoading] = useState(false);
+  /* This is equivalent to the three lines of commented code below*/
+  // const loadedState = useState(false);
+  // const loaded = loadedState[0];
+  // const SetLoading = loadedState[1]
+  /* TODO   check to see if these are correct initial values for useState*/
 
-class profile extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loaded: false
-    };
-  }
+  const [userId, SetUserId] = useState("");
+  const [username, SetUsername] = useState("");
+  const [name, SetName] = useState("");
+  const [avatar, SetAvatar] = useState("");
 
-  checkParams = () => {
-    let params = this.props.navigation.state.params;
+  const checkParams = () => {
+    let params = props.navigation.state.params;
     if (params) {
       if (params.userId) {
-        this.setState({
-          userID: params.userId
-        });
-        this.fetchUserInfo(params.userId);
+        SetUserId(params.userId);
+
+        fetchUserInfo(params.userId);
       }
     }
   };
 
-  fetchUserInfo = userId => {
-    let that = this;
+  const fetchUserInfo = userId => {
+    //let that = this;
     database
       .ref("users")
       .child(userId)
@@ -39,7 +50,8 @@ class profile extends React.Component {
       .then(function(snapshot) {
         const exists = snapshot.val() != null;
         if (exists) data = snapshot.val();
-        that.setState({ username: data });
+        //that.setState({ username: data });
+        SetUsername(data);
       })
       .catch(error => console.log(error));
 
@@ -51,7 +63,8 @@ class profile extends React.Component {
       .then(function(snapshot) {
         const exists = snapshot.val() != null;
         if (exists) data = snapshot.val();
-        that.setState({ name: data });
+        // that.setState({ name: data });
+        SetName(data);
       })
       .catch(error => console.log(error));
 
@@ -63,93 +76,94 @@ class profile extends React.Component {
       .then(function(snapshot) {
         const exists = snapshot.val() != null;
         if (exists) data = snapshot.val();
-        that.setState({ avatar: data, loaded: true });
+        //console.log(typeof data);
+        //that.setState({ avatar: data, loaded: true });
+        SetLoading(true);
+        SetAvatar(data);
       })
       .catch(error => console.log(error));
   };
 
-  componentDidMount = () => {
-    this.checkParams();
-  };
+  // componentDidMount = () => {
+  //   this.checkParams();
+  // };
+  // Study useEffect
+  useEffect(() => {
+    checkParams();
+  });
 
-  render() {
-    return (
-      <View style={{ flex: 1 }}>
-        {this.state.loaded == false ? (
-          <View>
-            <Text>Loading...</Text>
+  return (
+    <View style={{ flex: 1 }}>
+      {loaded == false ? (
+        <View>
+          <Text>Loading...</Text>
+        </View>
+      ) : (
+        <View style={{ flex: 1 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              height: 70,
+              paddingTop: 30,
+              backgroundColor: "white",
+              borderColor: "lightgrey",
+              borderBottomWidth: 0.5,
+              justifyContent: "center",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}
+          >
+            <TouchableOpacity
+              style={{ width: 100 }}
+              onPress={() => props.navigation.goBack()}
+            >
+              <Text
+                style={{ fontSize: 12, fontWeight: "bold", paddingLeft: 10 }}
+              >
+                Go Back
+              </Text>
+            </TouchableOpacity>
+            <Text>Profile</Text>
+            <Text style={{ width: 100 }}></Text>
           </View>
-        ) : (
-          <View style={{ flex: 1 }}>
+          <View
+            style={{
+              justifyContent: "space-evenly",
+              alignItems: "center",
+              flexDirection: "row",
+              paddingVertical: 10
+            }}
+          >
+            <Image
+              source={{
+                uri: avatar
+              }}
+              style={{
+                marginLeft: 10,
+                width: 100,
+                height: 100,
+                borderRadius: 50
+              }}
+            />
             <View
               style={{
-                flexDirection: "row",
-                height: 70,
-                paddingTop: 30,
-                backgroundColor: "white",
-                borderColor: "lightgrey",
-                borderBottomWidth: 0.5,
-                justifyContent: "center",
-                justifyContent: "space-between",
-                alignItems: "center"
+                marginRight: 10
               }}
             >
-              <TouchableOpacity
-                style={{ width: 100 }}
-                onPress={() => this.props.navigation.goBack()}
-              >
-                <Text
-                  style={{ fontSize: 12, fontWeight: "bold", paddingLeft: 10 }}
-                >
-                  Go Back
-                </Text>
-              </TouchableOpacity>
-              <Text>Profile</Text>
-              <Text style={{ width: 100 }}></Text>
-            </View>
-            <View
-              style={{
-                justifyContent: "space-evenly",
-                alignItems: "center",
-                flexDirection: "row",
-                paddingVertical: 10
-              }}
-            >
-              <Image
-                source={{
-                  uri: this.state.avatar
-                }}
-                style={{
-                  marginLeft: 10,
-                  width: 100,
-                  height: 100,
-                  borderRadius: 50
-                }}
-              />
-              <View
-                style={{
-                  marginRight: 10
-                }}
-              >
-                <Text>{this.state.name}</Text>
-                <Text>{this.state.username}</Text>
-              </View>
-            </View>
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "green"
-              }}
-            >
-              <Text>Loading photos...</Text>
+              <Text>{name}</Text>
+
+              <Text>{username}</Text>
             </View>
           </View>
-        )}
-      </View>
-    );
-  }
-}
+          <PhotoList
+            isUser={true}
+            userId={userId}
+            navigation={props.navigation}
+          />
+        </View>
+      )}
+    </View>
+  );
+};
 
-export default profile;
+export default userProfile;

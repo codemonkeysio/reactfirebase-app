@@ -12,6 +12,7 @@ import {
 import { f, auth, database, storage } from "../../config/config.js";
 import * as ImagePicker from "expo-image-picker";
 import * as Permissions from "expo-permissions";
+import UserAuth from "../components/auth.js";
 
 class upload extends React.Component {
   constructor(props) {
@@ -38,7 +39,7 @@ class upload extends React.Component {
   s4 = () => {
     return Math.floor((1 + Math.random()) * 0x10000)
       .toString(16)
-      .toString(1);
+      .substring(1);
   };
 
   uniqueId = () => {
@@ -307,12 +308,7 @@ class upload extends React.Component {
           </View>
         ) : (
           // not logged in
-          <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-          >
-            <Text>You are not logged in</Text>
-            <Text>Please login to upload a photo</Text>
-          </View>
+          <UserAuth message={"Please login to upload a photo"} />
         )}
       </View>
     );
